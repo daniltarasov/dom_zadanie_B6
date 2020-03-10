@@ -33,15 +33,28 @@ def save_album():
     album = request.forms.get("album")
     year = request.forms.get("year")
     """
-    Проверка наличия всех требуемых параметров
+    Проверка наличия всех требуемых параметров (исключить None и пустую строку) 
     """
+    new_album = {
+        "artist": artist,
+        "genre": genre,
+        "album": album,
+        "year": year
+    }
+
     empty = [None, ""]
-    if artist in empty or genre in empty or album in empty or year in empty:
-        message = "Некоторые параметры не заданы"
+    absent_parameters_list =[]
+    for key, value in new_album.items():
+        if value in empty:
+            absent_parameters_list.append(key)
+    if absent_parameters_list:
+        absent_parameters = ", ".join(absent_parameters_list)
+        message = "Некоторые параметры не заданы: {}.".format(absent_parameters)
         err400 = HTTPError(400, message)
         return err400
+
     """
-    Проверка корректности параметра "год"
+    Проверка корректности параметра "год". Остальные параметры будут по-любому или строки, или None. На None уже проверили.
     """
     try:
         year_int = int(year)
@@ -54,6 +67,8 @@ def save_album():
         message = 'Параметр "year" не может быть преобразован в число'
         err400 = HTTPError(400, message)
         return err400
+    else:
+        new_album[year] = year_int
 
     """
     Проверка наличия альбома в базе
@@ -66,12 +81,6 @@ def save_album():
     """
     Запись в базу
     """
-    new_album = {
-        "artist": artist,
-        "genre": genre,
-        "album": album,
-        "year": year_int
-    }
     albums.save(new_album)
     return "Данные успешно сохранены"
 
